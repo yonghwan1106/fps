@@ -11,27 +11,27 @@ export interface Target {
 
 const TARGET_CONFIGS = {
   normal: {
-    color: 0xff0000,
-    emissive: 0x440000,
-    size: 1,
+    color: 0xff3333,
+    emissive: 0xff0000,
+    size: 1.2,
     health: 25,
-    speed: 0.02,
+    speed: 0.03,
     points: 100,
   },
   fast: {
     color: 0xffff00,
-    emissive: 0x444400,
-    size: 0.7,
+    emissive: 0xffaa00,
+    size: 0.9,
     health: 15,
-    speed: 0.05,
+    speed: 0.06,
     points: 150,
   },
   tank: {
-    color: 0x0000ff,
-    emissive: 0x000044,
-    size: 1.5,
+    color: 0x3333ff,
+    emissive: 0x0000ff,
+    size: 1.8,
     health: 100,
-    speed: 0.01,
+    speed: 0.015,
     points: 300,
   },
 };
@@ -40,29 +40,44 @@ export class TargetManager {
   scene: THREE.Scene;
   targets: Target[] = [];
   maxTargets: number = 15;
-  spawnBounds = { min: -40, max: 40 };
+  spawnBounds = { min: -35, max: 35 };
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
   }
 
-  createTarget(type: 'normal' | 'fast' | 'tank' = 'normal'): Target {
+  createTarget(type: 'normal' | 'fast' | 'tank' = 'normal', nearPlayer: boolean = false): Target {
     const config = TARGET_CONFIGS[type];
 
     const geometry = new THREE.SphereGeometry(config.size, 16, 16);
     const material = new THREE.MeshStandardMaterial({
       color: config.color,
       emissive: config.emissive,
-      roughness: 0.5,
-      metalness: 0.3,
+      emissiveIntensity: 0.5,
+      roughness: 0.3,
+      metalness: 0.5,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(
-      this.spawnBounds.min + Math.random() * (this.spawnBounds.max - this.spawnBounds.min),
-      1.5 + Math.random() * 2,
-      this.spawnBounds.min + Math.random() * (this.spawnBounds.max - this.spawnBounds.min)
-    );
+
+    // 플레이어 근처에 스폰할지 랜덤 위치에 스폰할지 결정
+    if (nearPlayer) {
+      // 플레이어 앞쪽 (z가 음수 방향) 10~30 거리에 스폰
+      const distance = 10 + Math.random() * 20;
+      const angle = (Math.random() - 0.5) * Math.PI; // -90도 ~ +90도
+      mesh.position.set(
+        Math.sin(angle) * distance,
+        1.5 + Math.random() * 2,
+        -Math.cos(angle) * distance // 음수 = 플레이어 앞쪽
+      );
+    } else {
+      mesh.position.set(
+        this.spawnBounds.min + Math.random() * (this.spawnBounds.max - this.spawnBounds.min),
+        1.5 + Math.random() * 2,
+        this.spawnBounds.min + Math.random() * (this.spawnBounds.max - this.spawnBounds.min)
+      );
+    }
+
     mesh.castShadow = true;
 
     const direction = new THREE.Vector3(
@@ -87,13 +102,24 @@ export class TargetManager {
   }
 
   spawnInitialTargets(count: number = 10): void {
-    for (let i = 0; i < count; i++) {
+    // 처음 5개는 플레이어 앞에 스폰
+    for (let i = 0; i < Math.min(5, count); i++) {
       const rand = Math.random();
       let type: 'normal' | 'fast' | 'tank' = 'normal';
       if (rand > 0.9) type = 'tank';
       else if (rand > 0.7) type = 'fast';
 
-      this.createTarget(type);
+      this.createTarget(type, true);
+    }
+
+    // 나머지는 랜덤 위치에 스폰
+    for (let i = 5; i < count; i++) {
+      const rand = Math.random();
+      let type: 'normal' | 'fast' | 'tank' = 'normal';
+      if (rand > 0.9) type = 'tank';
+      else if (rand > 0.7) type = 'fast';
+
+      this.createTarget(type, false);
     }
   }
 
@@ -162,7 +188,9 @@ export class TargetManager {
       if (rand > 0.9) type = 'tank';
       else if (rand > 0.7) type = 'fast';
 
-      this.createTarget(type);
+      // 50% 확률로 플레이어 근처에 스폰
+      const nearPlayer = Math.random() > 0.5;
+      this.createTarget(type, nearPlayer);
     }
   }
 

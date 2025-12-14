@@ -56,6 +56,11 @@ export function Game() {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // 이미 초기화된 경우 스킵 (React Strict Mode 대응)
+    if (gameRef.current) {
+      return;
+    }
+
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer(containerRef.current);
