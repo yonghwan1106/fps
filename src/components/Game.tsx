@@ -32,19 +32,12 @@ export function Game() {
     isPaused,
     isGameOver,
     currentWeapon,
-    isReloading,
     sensitivity,
-    volume,
     startGame,
     pauseGame,
     resumeGame,
-    endGame,
     resetGame,
-    shoot,
-    reload,
-    setReloading,
     switchWeapon,
-    addScore,
     score,
   } = useGameStore();
 
@@ -139,36 +132,40 @@ export function Game() {
     }
   }, [sensitivity]);
 
-  // Handle shooting
+  // Handle shooting - read state directly from store to avoid stale closures
   const handleShoot = useCallback(() => {
-    if (!gameRef.current || !isPlaying || isPaused || isReloading) return;
+    if (!gameRef.current) return;
+
+    // Get fresh state from store to avoid stale closure issues
+    const state = useGameStore.getState();
+    if (!state.isPlaying || state.isPaused) return;
 
     const { camera, targetManager, weaponSystem, effectsManager } = gameRef.current;
-    const weapon = WEAPONS[currentWeapon];
+    const weapon = WEAPONS[state.currentWeapon];
 
-    if (shoot()) {
-      audioManager.playShoot(currentWeapon, volume);
+    if (state.shoot()) {
+      audioManager.playShoot(state.currentWeapon, state.volume);
       createMuzzleFlash(gameRef.current.scene, camera.position.clone(), new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-      createScreenShake(camera, 0.02 * (currentWeapon === 'shotgun' ? 3 : 1), 50);
+      createScreenShake(camera, 0.02 * (state.currentWeapon === 'shotgun' ? 3 : 1), 50);
 
       // Check hit
       const hitObject = weaponSystem.checkHit(targetManager.getTargets());
       if (hitObject) {
         const target = targetManager.findTarget(hitObject);
         if (target) {
-          audioManager.playHit(volume);
+          audioManager.playHit(state.volume);
           effectsManager.createHitEffect(target.mesh.position.clone());
 
           const result = targetManager.damageTarget(target, weapon.damage);
           if (result.destroyed) {
-            audioManager.playExplosion(volume);
+            audioManager.playExplosion(state.volume);
             effectsManager.createExplosion(target.mesh.position.clone());
-            addScore(result.points);
+            state.addScore(result.points);
             targetManager.removeTarget(target);
 
             // Respawn after delay
             setTimeout(() => {
-              if (gameRef.current && isPlaying) {
+              if (gameRef.current && useGameStore.getState().isPlaying) {
                 targetManager.respawnTarget();
               }
             }, 1000);
@@ -176,35 +173,56 @@ export function Game() {
         }
       }
     } else {
-      // Out of ammo
-      const ammo = useGameStore.getState().ammo[currentWeapon];
-      if (ammo === 0) {
-        audioManager.playEmpty(volume);
+      // Out of ammo or reloading - check why and auto-reload if empty
+      const currentAmmo = state.ammo[state.currentWeapon];
+      if (currentAmmo === 0 && !state.isReloading) {
+        audioManager.playEmpty(state.volume);
+        // Auto-reload when empty
+        state.reload();
+        audioManager.playReload(state.volume);
+        const reloadTime = state.currentWeapon === 'shotgun' ? 2000 : state.currentWeapon === 'rifle' ? 1500 : 1000;
+        setTimeout(() => {
+          useGameStore.getState().setReloading(false);
+        }, reloadTime);
       }
     }
-  }, [isPlaying, isPaused, currentWeapon, isReloading, shoot, addScore, volume]);
+  }, []); // No dependencies - always reads fresh state from store
 
-  // Handle reload
+  // Handle reload - read state directly from store
   const handleReload = useCallback(() => {
-    if (!isPlaying || isPaused || isReloading) return;
+    const state = useGameStore.getState();
+    if (!state.isPlaying || state.isPaused || state.isReloading) return;
 
-    reload();
-    audioManager.playReload(volume);
+    state.reload();
+    audioManager.playReload(state.volume);
 
     // Reload time based on weapon
-    const reloadTime = currentWeapon === 'shotgun' ? 2000 : currentWeapon === 'rifle' ? 1500 : 1000;
+    const reloadTime = state.currentWeapon === 'shotgun' ? 2000 : state.currentWeapon === 'rifle' ? 1500 : 1000;
     setTimeout(() => {
-      setReloading(false);
+      useGameStore.getState().setReloading(false);
     }, reloadTime);
-  }, [isPlaying, isPaused, isReloading, currentWeapon, reload, setReloading, volume]);
+  }, []); // No dependencies - always reads fresh state from store
 
-  // Auto-fire for rifle
+  // Auto-fire for rifle - check state from store
   useEffect(() => {
-    if (isMouseDownRef.current && isPlaying && !isPaused && WEAPONS[currentWeapon].automatic) {
-      autoFireIntervalRef.current = setInterval(() => {
-        handleShoot();
-      }, WEAPONS[currentWeapon].fireRate);
-    }
+    const checkAndStartAutoFire = () => {
+      const state = useGameStore.getState();
+      if (isMouseDownRef.current && state.isPlaying && !state.isPaused && WEAPONS[state.currentWeapon].automatic) {
+        if (!autoFireIntervalRef.current) {
+          autoFireIntervalRef.current = setInterval(() => {
+            handleShoot();
+          }, WEAPONS[state.currentWeapon].fireRate);
+        }
+      } else {
+        if (autoFireIntervalRef.current) {
+          clearInterval(autoFireIntervalRef.current);
+          autoFireIntervalRef.current = null;
+        }
+      }
+    };
+
+    // Check on mount and when dependencies change
+    checkAndStartAutoFire();
 
     return () => {
       if (autoFireIntervalRef.current) {
@@ -214,10 +232,11 @@ export function Game() {
     };
   }, [isPlaying, isPaused, currentWeapon, handleShoot]);
 
-  // Event handlers
+  // Event handlers - read state from store directly
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isPlaying && !isPaused && document.pointerLockElement) {
+      const state = useGameStore.getState();
+      if (state.isPlaying && !state.isPaused && document.pointerLockElement) {
         gameRef.current?.player.handleMouseMove(e.movementX, e.movementY);
       }
     };
@@ -225,8 +244,15 @@ export function Game() {
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button === 0) {
         isMouseDownRef.current = true;
-        if (isPlaying && !isPaused) {
+        const state = useGameStore.getState();
+        if (state.isPlaying && !state.isPaused) {
           handleShoot();
+          // Start auto-fire for automatic weapons
+          if (WEAPONS[state.currentWeapon].automatic && !autoFireIntervalRef.current) {
+            autoFireIntervalRef.current = setInterval(() => {
+              handleShoot();
+            }, WEAPONS[state.currentWeapon].fireRate);
+          }
         }
       }
     };
@@ -242,10 +268,11 @@ export function Game() {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isPlaying) return;
+      const state = useGameStore.getState();
+      if (!state.isPlaying) return;
 
       if (e.code === 'Escape') {
-        if (isPaused) {
+        if (state.isPaused) {
           document.body.requestPointerLock();
           resumeGame();
         } else {
@@ -255,7 +282,7 @@ export function Game() {
         return;
       }
 
-      if (isPaused) return;
+      if (state.isPaused) return;
 
       gameRef.current?.player.handleKeyDown(e.code);
 
@@ -265,15 +292,15 @@ export function Game() {
           break;
         case 'Digit1':
           switchWeapon('pistol');
-          audioManager.playWeaponSwitch(volume);
+          audioManager.playWeaponSwitch(state.volume);
           break;
         case 'Digit2':
           switchWeapon('rifle');
-          audioManager.playWeaponSwitch(volume);
+          audioManager.playWeaponSwitch(state.volume);
           break;
         case 'Digit3':
           switchWeapon('shotgun');
-          audioManager.playWeaponSwitch(volume);
+          audioManager.playWeaponSwitch(state.volume);
           break;
       }
     };
@@ -283,7 +310,8 @@ export function Game() {
     };
 
     const handlePointerLockChange = () => {
-      if (!document.pointerLockElement && isPlaying && !isPaused && !isGameOver) {
+      const state = useGameStore.getState();
+      if (!document.pointerLockElement && state.isPlaying && !state.isPaused && !state.isGameOver) {
         pauseGame();
       }
     };
@@ -303,7 +331,7 @@ export function Game() {
       document.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
     };
-  }, [isPlaying, isPaused, isGameOver, handleShoot, handleReload, switchWeapon, pauseGame, resumeGame, volume]);
+  }, [handleShoot, handleReload, switchWeapon, pauseGame, resumeGame]);
 
   // Start game
   const handleStart = useCallback(() => {
