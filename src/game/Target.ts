@@ -17,6 +17,7 @@ const TARGET_CONFIGS = {
     health: 25,
     speed: 0.03,
     points: 100,
+    playerDamage: 15, // 빨간색 구체가 주는 데미지
   },
   fast: {
     color: 0xffff00,
@@ -25,6 +26,7 @@ const TARGET_CONFIGS = {
     health: 15,
     speed: 0.06,
     points: 150,
+    playerDamage: 10, // 노란색 구체가 주는 데미지
   },
   tank: {
     color: 0x3333ff,
@@ -33,6 +35,7 @@ const TARGET_CONFIGS = {
     health: 100,
     speed: 0.015,
     points: 300,
+    playerDamage: 20, // 파란색 구체가 주는 데미지
   },
 };
 
@@ -201,5 +204,27 @@ export class TargetManager {
       (target.mesh.material as THREE.Material).dispose();
     });
     this.targets = [];
+  }
+
+  // 플레이어와의 거리를 확인하고 가까운 적의 데미지를 반환
+  checkPlayerDamage(playerPosition: THREE.Vector3, damageRange: number = 5): number {
+    let totalDamage = 0;
+
+    this.targets.forEach((target) => {
+      const distance = target.mesh.position.distanceTo(playerPosition);
+      if (distance < damageRange) {
+        // 거리에 따라 데미지 비율 조정 (가까울수록 더 많은 데미지)
+        const damageMultiplier = 1 - (distance / damageRange);
+        const damage = TARGET_CONFIGS[target.type].playerDamage * damageMultiplier;
+        totalDamage += damage;
+      }
+    });
+
+    return totalDamage;
+  }
+
+  // 특정 타겟의 데미지 값 가져오기
+  getTargetDamage(target: Target): number {
+    return TARGET_CONFIGS[target.type].playerDamage;
   }
 }

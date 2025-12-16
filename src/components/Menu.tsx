@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useGameStore, WEAPONS } from '@/store/gameStore';
+import { useGameStore, WEAPONS, DIFFICULTY_CONFIG, Difficulty } from '@/store/gameStore';
 import { Leaderboard } from './Leaderboard';
 
 interface MenuProps {
@@ -10,6 +10,9 @@ interface MenuProps {
 
 export function StartMenu({ onStart }: MenuProps) {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const { difficulty, setDifficulty } = useGameStore();
+
+  const difficulties: Difficulty[] = ['easy', 'normal', 'hard'];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -18,6 +21,29 @@ export function StartMenu({ onStart }: MenuProps) {
           FPS ARENA
         </h1>
         <p className="text-gray-400 mb-8 font-mono">Tactical Shooting Game</p>
+
+        {/* 난이도 선택 */}
+        <div className="mb-6">
+          <h2 className="text-green-400 font-mono text-lg mb-3">DIFFICULTY</h2>
+          <div className="flex justify-center gap-2">
+            {difficulties.map((diff) => (
+              <button
+                key={diff}
+                onClick={() => setDifficulty(diff)}
+                className={`px-4 py-2 font-mono text-sm rounded transition-colors ${
+                  difficulty === diff
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {DIFFICULTY_CONFIG[diff].label}
+              </button>
+            ))}
+          </div>
+          <p className="text-gray-500 text-xs font-mono mt-2">
+            데미지 배율: {DIFFICULTY_CONFIG[difficulty].damageMultiplier}x
+          </p>
+        </div>
 
         <div className="space-y-4 mb-8">
           <button
@@ -83,6 +109,23 @@ export function StartMenu({ onStart }: MenuProps) {
               <span>[3] Shotgun</span>
               <span className="text-green-400">DMG: {WEAPONS.shotgun.damage}</span>
             </div>
+          </div>
+
+          <h2 className="text-green-400 font-mono text-lg mt-6 mb-4">ENEMIES</h2>
+          <div className="space-y-2 text-gray-300 font-mono text-sm">
+            <div className="flex justify-between">
+              <span className="text-red-400">● Red (Normal)</span>
+              <span className="text-red-400">DMG: 15</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-yellow-400">● Yellow (Fast)</span>
+              <span className="text-yellow-400">DMG: 10</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-400">● Blue (Tank)</span>
+              <span className="text-blue-400">DMG: 20</span>
+            </div>
+            <p className="text-gray-500 text-xs mt-2">가까이 가면 데미지를 받습니다!</p>
           </div>
         </div>
 

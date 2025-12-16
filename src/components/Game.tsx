@@ -39,11 +39,14 @@ export function Game() {
     resetGame,
     switchWeapon,
     score,
+    takeDamage,
   } = useGameStore();
 
   const [showStartMenu, setShowStartMenu] = useState(true);
   const isMouseDownRef = useRef(false);
   const autoFireIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastDamageTimeRef = useRef(0);
+  const damageIntervalMs = 500; // 0.5초마다 데미지 체크
 
   // Initialize game
   useEffect(() => {
@@ -110,6 +113,16 @@ export function Game() {
         targetManager.update(1 / 60);
         weaponSystem.update();
         effectsManager.update();
+
+        // 플레이어에게 데미지 체크
+        const now = Date.now();
+        if (now - lastDamageTimeRef.current >= damageIntervalMs) {
+          const damage = targetManager.checkPlayerDamage(camera.position, 5);
+          if (damage > 0) {
+            useGameStore.getState().takeDamage(damage);
+            lastDamageTimeRef.current = now;
+          }
+        }
       }
 
       renderer.render(scene, camera);

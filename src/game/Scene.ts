@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 export function createScene(): THREE.Scene {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87ceeb);
-  scene.fog = new THREE.Fog(0x87ceeb, 0, 150);
+  scene.background = new THREE.Color(0xadd8e6); // 더 밝은 하늘색
+  scene.fog = new THREE.Fog(0xadd8e6, 50, 200); // 안개 시작 거리 늘림
   return scene;
 }
 
@@ -29,12 +29,12 @@ export function createRenderer(container: HTMLElement): THREE.WebGLRenderer {
 }
 
 export function createLighting(scene: THREE.Scene): void {
-  // Ambient light
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  // Ambient light - 더 밝게
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambientLight);
 
-  // Directional light (sun)
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  // Directional light (sun) - 더 밝게
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
   directionalLight.position.set(50, 100, 50);
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.width = 2048;
@@ -47,16 +47,16 @@ export function createLighting(scene: THREE.Scene): void {
   directionalLight.shadow.camera.bottom = -100;
   scene.add(directionalLight);
 
-  // Hemisphere light for better ambient
-  const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x3a7d44, 0.3);
+  // Hemisphere light for better ambient - 더 밝게
+  const hemisphereLight = new THREE.HemisphereLight(0xadd8e6, 0x7ccd7c, 0.5);
   scene.add(hemisphereLight);
 }
 
 export function createEnvironment(scene: THREE.Scene): void {
-  // Ground
+  // Ground - 더 밝은 잔디색
   const groundGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
   const groundMaterial = new THREE.MeshStandardMaterial({
-    color: 0x3a7d44,
+    color: 0x7ccd7c, // 밝은 초록색
     roughness: 0.8,
     metalness: 0.1,
   });
@@ -65,27 +65,7 @@ export function createEnvironment(scene: THREE.Scene): void {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Walls
-  const wallMaterial = new THREE.MeshStandardMaterial({
-    color: 0x808080,
-    roughness: 0.7,
-  });
-
-  const wallPositions: Array<{ pos: [number, number, number]; size: [number, number, number] }> = [
-    { pos: [0, 5, -50], size: [100, 10, 1] },
-    { pos: [0, 5, 50], size: [100, 10, 1] },
-    { pos: [-50, 5, 0], size: [1, 10, 100] },
-    { pos: [50, 5, 0], size: [1, 10, 100] },
-  ];
-
-  wallPositions.forEach(({ pos, size }) => {
-    const geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
-    const wall = new THREE.Mesh(geometry, wallMaterial);
-    wall.position.set(pos[0], pos[1], pos[2]);
-    wall.castShadow = true;
-    wall.receiveShadow = true;
-    scene.add(wall);
-  });
+  // 벽 제거됨 - 더 넓은 맵!
 
   // Obstacles
   createObstacles(scene);
@@ -93,7 +73,7 @@ export function createEnvironment(scene: THREE.Scene): void {
 
 function createObstacles(scene: THREE.Scene): void {
   const obstacleMaterial = new THREE.MeshStandardMaterial({
-    color: 0x8b4513,
+    color: 0xdeb887, // 밝은 나무색
     roughness: 0.6,
   });
 

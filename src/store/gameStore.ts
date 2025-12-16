@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 export type WeaponType = 'pistol' | 'rifle' | 'shotgun';
+export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface WeaponConfig {
   name: string;
@@ -10,25 +11,32 @@ export interface WeaponConfig {
   automatic: boolean;
 }
 
+// 난이도별 설정
+export const DIFFICULTY_CONFIG: Record<Difficulty, { damageMultiplier: number; spawnRate: number; label: string }> = {
+  easy: { damageMultiplier: 0.5, spawnRate: 1.5, label: '쉬움' },
+  normal: { damageMultiplier: 1.0, spawnRate: 1.0, label: '보통' },
+  hard: { damageMultiplier: 1.5, spawnRate: 0.7, label: '어려움' },
+};
+
 export const WEAPONS: Record<WeaponType, WeaponConfig> = {
   pistol: {
     name: 'Pistol',
     damage: 25,
-    maxAmmo: 12,
+    maxAmmo: 20,
     fireRate: 300,
     automatic: false,
   },
   rifle: {
     name: 'Rifle',
     damage: 35,
-    maxAmmo: 30,
+    maxAmmo: 50,
     fireRate: 100,
     automatic: true,
   },
   shotgun: {
     name: 'Shotgun',
     damage: 100,
-    maxAmmo: 6,
+    maxAmmo: 10,
     fireRate: 800,
     automatic: false,
   },
@@ -53,6 +61,7 @@ interface GameState {
   // Settings
   sensitivity: number;
   volume: number;
+  difficulty: Difficulty;
 
   // Actions
   startGame: () => void;
@@ -62,6 +71,7 @@ interface GameState {
   resetGame: () => void;
 
   setHealth: (health: number) => void;
+  takeDamage: (damage: number) => void;
   addScore: (points: number) => void;
 
   switchWeapon: (weapon: WeaponType) => void;
@@ -71,6 +81,7 @@ interface GameState {
 
   setSensitivity: (sensitivity: number) => void;
   setVolume: (volume: number) => void;
+  setDifficulty: (difficulty: Difficulty) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -93,6 +104,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   sensitivity: 0.002,
   volume: 0.5,
+  difficulty: 'normal',
 
   // Actions
   startGame: () => set({
@@ -134,6 +146,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   setHealth: (health) => {
     set({ health: Math.max(0, Math.min(100, health)) });
     if (health <= 0) {
+      get().endGame();
+    }
+  },
+
+  takeDamage: (damage) => {
+    const state = get();
+    const multiplier = DIFFICULTY_CONFIG[state.difficulty].damageMultiplier;
+    const actualDamage = Math.round(damage * multiplier);
+    const newHealth = Math.max(0, state.health - actualDamage);
+    set({ health: newHealth });
+    if (newHealth <= 0) {
       get().endGame();
     }
   },
@@ -192,4 +215,5 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setSensitivity: (sensitivity) => set({ sensitivity }),
   setVolume: (volume) => set({ volume }),
+  setDifficulty: (difficulty) => set({ difficulty }),
 }));
