@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Arena Rivals</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <script>
+        window.addEventListener('error', function (e) {
+            alert("Game Error: " + e.message);
+            console.error(e);
+        });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <div id="ui-layer">
+        <div id="damage-vignette"></div>
+        <div id="hit-marker"></div>
+        <div id="crosshair"></div>
+        <div id="alert-message"></div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <!-- Top Info Bar -->
+            <div id="top-bar">
+                <div id="wave-number">WAVE <span>1</span></div>
+                <div id="time-remaining">TIME <span>2:00</span></div>
+                <div id="survival-time">SURVIVED <span>0:00</span></div>
+            </div>
+
+            <!-- Health & Shield -->
+            <div id="health-container">
+                <div id="health-bar">
+                    <div id="health-fill"></div>
+                    <div id="shield-bar"></div>
+                </div>
+                <span id="health-text">HP</span>
+            </div>
+
+            <!-- Weapon Info -->
+            <div id="weapon-info">
+                <div id="weapon-name">PULSE RIFLE</div>
+                <div id="ammo">AMMO: <span id="ammo-count">30 / 30</span></div>
+            </div>
+
+            <!-- Score -->
+            <div id="score">SCORE: <span id="score-count">0</span></div>
+
+            <!-- Killstreak Bar -->
+            <div id="killstreak-container">
+                <div id="killstreak-bar">
+                    <div id="killstreak-fill"></div>
+                </div>
+                <span id="killstreak-label">STREAK: <span id="killstreak-count">0</span></span>
+            </div>
+
+            <!-- Dash Charges -->
+            <div id="dash-container">
+                <span>DASH</span>
+                <div id="dash-charges"></div>
+            </div>
+
+            <!-- Ability -->
+            <div id="ability-container">
+                <div id="ability-icon">
+                    <div id="ability-cooldown"></div>
+                    <span id="ability-key">E</span>
+                </div>
+                <span id="ability-name">BLINK</span>
+            </div>
+
+            <!-- Active Buffs -->
+            <div id="buff-bar"></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <div class="content-wrapper">
+                <h1 class="glitch" data-text="NEON ARENA">NEON ARENA</h1>
+                <h2 class="subtitle">RIVALS EDITION</h2>
+
+                <!-- Game Mode Selection -->
+                <div class="section-title">SELECT MODE</div>
+                <div class="mode-select">
+                    <div class="mode-card active" data-mode="survival">
+                        <h3>SURVIVAL</h3>
+                        <p>Endless waves, survive as long as possible</p>
+                    </div>
+                    <div class="mode-card" data-mode="wave">
+                        <h3>WAVE ASSAULT</h3>
+                        <p>Clear waves, defeat bosses every 5 waves</p>
+                    </div>
+                    <div class="mode-card" data-mode="time_attack">
+                        <h3>TIME ATTACK</h3>
+                        <p>Score 5000 points in 2 minutes</p>
+                    </div>
+                </div>
+
+                <!-- Difficulty Selection -->
+                <div class="section-title">DIFFICULTY</div>
+                <div class="difficulty-select">
+                    <button class="diff-btn" data-diff="easy">EASY</button>
+                    <button class="diff-btn active" data-diff="normal">NORMAL</button>
+                    <button class="diff-btn" data-diff="hard">HARD</button>
+                </div>
+
+                <!-- Weapon Selection -->
+                <div class="section-title">LOADOUT</div>
+                <div class="loadout-select">
+                    <div class="weapon-slot">
+                        <label>PRIMARY</label>
+                        <select id="primary-weapon">
+                            <option value="0">Pulse Rifle (AR)</option>
+                            <option value="1">Phantom AR</option>
+                            <option value="2">Viper SMG</option>
+                            <option value="3">Neon Shotgun</option>
+                            <option value="4">Ion Sniper</option>
+                            <option value="5">Plasma LMG</option>
+                            <option value="6">Arc DMR</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Ability Selection -->
+                <div class="section-title">ABILITY</div>
+                <div class="ability-select">
+                    <div class="ability-card active" data-ability="blink">
+                        <div class="ability-icon">B</div>
+                        <div class="ability-info">
+                            <h4>BLINK</h4>
+                            <p>Teleport 30 units forward</p>
+                        </div>
+                    </div>
+                    <div class="ability-card" data-ability="overcharge">
+                        <div class="ability-icon">O</div>
+                        <div class="ability-info">
+                            <h4>OVERCHARGE</h4>
+                            <p>2x fire rate for 5 seconds</p>
+                        </div>
+                    </div>
+                    <div class="ability-card" data-ability="phase">
+                        <div class="ability-icon">P</div>
+                        <div class="ability-info">
+                            <h4>PHASE SHIFT</h4>
+                            <p>Invulnerable for 2 seconds</p>
+                        </div>
+                    </div>
+                    <div class="ability-card" data-ability="scanner">
+                        <div class="ability-icon">S</div>
+                        <div class="ability-info">
+                            <h4>SCANNER</h4>
+                            <p>Highlight enemies for 5 seconds</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Perk Selection -->
+                <div class="section-title">PERKS (Select 2)</div>
+                <div class="perk-select">
+                    <div class="perk-card active" data-perk="quickReload">
+                        <span class="perk-name">Quick Reload</span>
+                        <span class="perk-desc">-30% reload time</span>
+                    </div>
+                    <div class="perk-card active" data-perk="vampirism">
+                        <span class="perk-name">Vampirism</span>
+                        <span class="perk-desc">Kills restore 10 HP</span>
+                    </div>
+                    <div class="perk-card" data-perk="thickSkin">
+                        <span class="perk-name">Thick Skin</span>
+                        <span class="perk-desc">-15% damage taken</span>
+                    </div>
+                    <div class="perk-card" data-perk="deadEye">
+                        <span class="perk-name">Dead Eye</span>
+                        <span class="perk-desc">+25% headshot damage</span>
+                    </div>
+                    <div class="perk-card" data-perk="marathoner">
+                        <span class="perk-name">Marathoner</span>
+                        <span class="perk-desc">Unlimited sprint</span>
+                    </div>
+                    <div class="perk-card" data-perk="scavenger">
+                        <span class="perk-name">Scavenger</span>
+                        <span class="perk-desc">+50% ammo from pickups</span>
+                    </div>
+                    <div class="perk-card" data-perk="ninja">
+                        <span class="perk-name">Ninja</span>
+                        <span class="perk-desc">Faster crouch speed</span>
+                    </div>
+                    <div class="perk-card" data-perk="heavyHitter">
+                        <span class="perk-name">Heavy Hitter</span>
+                        <span class="perk-desc">+10% base damage</span>
+                    </div>
+                </div>
+
+                <!-- Controls Guide -->
+                <div class="guide-card collapsed">
+                    <h2 class="guide-toggle">CONTROLS <span>+</span></h2>
+                    <div class="guide-content">
+                        <div class="guide-grid">
+                            <div class="guide-item">
+                                <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span>
+                                <span>MOVE</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">SPACE</span>
+                                <span>JUMP</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">SHIFT</span> + <span class="key">C</span>
+                                <span>SLIDE</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">Q</span>
+                                <span>DASH</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">E</span>
+                                <span>ABILITY</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">R-CLICK</span>
+                                <span>ADS/SCOPE</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">1</span>-<span class="key">8</span>
+                                <span>WEAPONS</span>
+                            </div>
+                            <div class="guide-item">
+                                <span class="key">R</span>
+                                <span>RELOAD</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="btn-start" class="cyber-button">
+                    INITIALIZE LINK
+                    <div class="glitch-effect"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="hidden">
+            <h1 class="glitch" data-text="SYSTEM FAILURE">SYSTEM FAILURE</h1>
+            <div class="stats-container">
+                <p>FINAL SCORE: <span id="final-score">0</span></p>
+                <p>HIGHEST STREAK: <span id="final-streak">0</span></p>
+                <p>TIME SURVIVED: <span id="final-time">0:00</span></p>
+            </div>
+            <div id="btn-restart" class="cyber-button">REBOOT SYSTEM</div>
+        </div>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+        </div>
+        <div id="loading-zone-protection"></div>
+        <div id="mobile-buttons">
+            <button id="btn-fire" class="control-btn fire">FIRE</button>
+            <button id="btn-jump" class="control-btn">JUMP</button>
+            <button id="btn-reload" class="control-btn">R</button>
+            <button id="btn-switch" class="control-btn">SW</button>
+            <button id="btn-slide" class="control-btn slide">SLD</button>
+            <button id="btn-dash" class="control-btn dash">DSH</button>
+            <button id="btn-ability" class="control-btn ability">E</button>
+        </div>
+    </div>
+    <script type="module" src="game.js"></script>
+</body>
+
+</html>
