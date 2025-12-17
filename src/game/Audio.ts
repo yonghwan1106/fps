@@ -1,5 +1,7 @@
 import { Howl, Howler } from 'howler';
-import { WeaponType } from '@/store/gameStore';
+
+// Weapon categories for audio
+type WeaponCategory = 'ar' | 'smg' | 'shotgun' | 'sniper' | 'lmg' | 'dmr' | 'pistol';
 
 // Audio URLs using Web Audio API oscillator for sound synthesis
 // Since we don't have actual audio files, we'll generate sounds programmatically
@@ -14,16 +16,15 @@ class SoundGenerator {
     return this.audioContext;
   }
 
-  playShoot(weaponType: WeaponType, volume: number = 0.5): void {
+  playShoot(weaponCategory: WeaponCategory | string, volume: number = 0.5): void {
     const ctx = this.getContext();
     const gainNode = ctx.createGain();
     gainNode.connect(ctx.destination);
     gainNode.gain.value = volume;
 
     const oscillator = ctx.createOscillator();
-    const noise = ctx.createOscillator();
 
-    switch (weaponType) {
+    switch (weaponCategory) {
       case 'pistol':
         oscillator.frequency.setValueAtTime(150, ctx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.1);
@@ -33,13 +34,43 @@ class SoundGenerator {
         oscillator.stop(ctx.currentTime + 0.1);
         break;
 
-      case 'rifle':
+      case 'ar':
+      case 'dmr':
         oscillator.frequency.setValueAtTime(200, ctx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.05);
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
         oscillator.connect(gainNode);
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + 0.05);
+        break;
+
+      case 'smg':
+        oscillator.frequency.setValueAtTime(180, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.03);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.03);
+        oscillator.connect(gainNode);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.03);
+        break;
+
+      case 'lmg':
+        oscillator.frequency.setValueAtTime(180, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.07);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.07);
+        oscillator.connect(gainNode);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.07);
+        break;
+
+      case 'sniper':
+        // Powerful single shot
+        oscillator.frequency.setValueAtTime(100, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.2);
+        gainNode.gain.value = volume * 1.2;
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        oscillator.connect(gainNode);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.2);
         break;
 
       case 'shotgun':
@@ -68,6 +99,15 @@ class SoundGenerator {
         noiseSource.start(ctx.currentTime);
         noiseSource.stop(ctx.currentTime + 0.3);
         break;
+
+      default:
+        // Default rifle-like sound
+        oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        oscillator.connect(gainNode);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.05);
     }
   }
 

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { WeaponType, WEAPONS } from '@/store/gameStore';
 
 export interface Bullet {
   mesh: THREE.Mesh;
@@ -19,9 +18,7 @@ export class WeaponSystem {
     this.raycaster = new THREE.Raycaster();
   }
 
-  shoot(weaponType: WeaponType): THREE.Object3D | null {
-    const weapon = WEAPONS[weaponType];
-
+  shoot(): THREE.Object3D | null {
     // Create visual bullet
     this.createBulletTrail();
 
@@ -33,6 +30,22 @@ export class WeaponSystem {
 
   checkHit(targets: THREE.Object3D[]): THREE.Object3D | null {
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    const intersects = this.raycaster.intersectObjects(targets);
+
+    if (intersects.length > 0) {
+      return intersects[0].object;
+    }
+
+    return null;
+  }
+
+  // Spread를 적용한 히트 체크 (산탄총, 조준 시 정확도 등)
+  checkHitWithSpread(targets: THREE.Object3D[], spread: number): THREE.Object3D | null {
+    // 스프레드 적용
+    const spreadX = (Math.random() - 0.5) * spread * 2;
+    const spreadY = (Math.random() - 0.5) * spread * 2;
+
+    this.raycaster.setFromCamera(new THREE.Vector2(spreadX, spreadY), this.camera);
     const intersects = this.raycaster.intersectObjects(targets);
 
     if (intersects.length > 0) {
