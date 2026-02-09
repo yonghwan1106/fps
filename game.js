@@ -314,7 +314,7 @@ class Enemy {
 
         // Default Stats
         this.health = 100;
-        this.speed = 3.3;
+        this.speed = 1;
         this.scoreValue = 100;
         this.damage = 10;
 
@@ -390,7 +390,7 @@ class Charger extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 50;
-        this.speed = 5;
+        this.speed = 1;
         this.scoreValue = 50;
         this.mesh.material.color.setHex(0xff0000);
         this.baseColor = 0xff0000;
@@ -402,7 +402,7 @@ class Tank extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 400;
-        this.speed = 2.3;
+        this.speed = 1;
         this.scoreValue = 300;
         this.mesh.scale.set(2, 2, 2);
         this.mesh.material.color.setHex(0x00ff00);
@@ -415,7 +415,7 @@ class Shooter extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 80;
-        this.speed = 3.3;
+        this.speed = 1;
         this.scoreValue = 150;
         this.mesh.material.color.setHex(0xff00ff);
         this.baseColor = 0xff00ff;
@@ -471,7 +471,7 @@ class BossEnemy extends Enemy {
         super(scene, position);
         this.health = 2000;
         this.maxHealth = 2000;
-        this.speed = 4;
+        this.speed = 1;
         this.scoreValue = 1000;
         this.damage = 25;
         this.mesh.scale.set(4, 4, 4);
