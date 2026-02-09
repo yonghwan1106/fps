@@ -82,6 +82,18 @@
 
             <!-- Active Buffs -->
             <div id="buff-bar"></div>
+
+            <!-- Perk Button -->
+            <div id="perk-btn" onclick="togglePerkPanel()">PERKS</div>
+        </div>
+
+        <!-- In-Game Perk Panel -->
+        <div id="perk-panel" style="display:none;">
+            <div id="perk-panel-inner">
+                <div id="perk-panel-title">PERKS (Select 2)</div>
+                <div id="perk-panel-grid"></div>
+                <button id="perk-panel-close" onclick="togglePerkPanel()">CLOSE</button>
+            </div>
         </div>
 
         <!-- Start Screen -->

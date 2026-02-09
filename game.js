@@ -314,7 +314,7 @@ class Enemy {
 
         // Default Stats
         this.health = 100;
-        this.speed = 10;
+        this.speed = 3.3;
         this.scoreValue = 100;
         this.damage = 10;
 
@@ -390,7 +390,7 @@ class Charger extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 50;
-        this.speed = 30;
+        this.speed = 10;
         this.scoreValue = 50;
         this.mesh.material.color.setHex(0xff0000);
         this.baseColor = 0xff0000;
@@ -402,7 +402,7 @@ class Tank extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 400;
-        this.speed = 7;
+        this.speed = 2.3;
         this.scoreValue = 300;
         this.mesh.scale.set(2, 2, 2);
         this.mesh.material.color.setHex(0x00ff00);
@@ -415,7 +415,7 @@ class Shooter extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 80;
-        this.speed = 10;
+        this.speed = 3.3;
         this.scoreValue = 150;
         this.mesh.material.color.setHex(0xff00ff);
         this.baseColor = 0xff00ff;
@@ -471,7 +471,7 @@ class BossEnemy extends Enemy {
         super(scene, position);
         this.health = 2000;
         this.maxHealth = 2000;
-        this.speed = 12;
+        this.speed = 4;
         this.scoreValue = 1000;
         this.damage = 25;
         this.mesh.scale.set(4, 4, 4);
@@ -945,6 +945,63 @@ function updateBuffs(delta) {
         });
     }
 }
+
+// --- In-Game Perk Panel ---
+let perkPanelOpen = false;
+
+function togglePerkPanel() {
+    const panel = document.getElementById('perk-panel');
+    perkPanelOpen = !perkPanelOpen;
+
+    if (perkPanelOpen) {
+        // Build perk cards
+        const grid = document.getElementById('perk-panel-grid');
+        grid.innerHTML = '';
+        Object.entries(PERKS).forEach(([key, perk]) => {
+            const card = document.createElement('div');
+            card.className = 'perk-panel-card' + (selectedPerks.includes(key) ? ' active' : '');
+            card.innerHTML = `<span class="perk-name">${perk.name}</span><span class="perk-desc">${perk.description}</span>`;
+            card.addEventListener('click', () => {
+                if (card.classList.contains('active')) {
+                    card.classList.remove('active');
+                    selectedPerks = selectedPerks.filter(p => p !== key);
+                } else {
+                    if (selectedPerks.length < 2) {
+                        card.classList.add('active');
+                        selectedPerks.push(key);
+                    } else {
+                        const oldKey = selectedPerks.shift();
+                        grid.querySelector(`.perk-panel-card.active`)?.classList.remove('active');
+                        card.classList.add('active');
+                        selectedPerks.push(key);
+                        // Re-sync active states
+                        grid.querySelectorAll('.perk-panel-card').forEach(c => {
+                            const cKey = Object.keys(PERKS)[Array.from(grid.children).indexOf(c)];
+                            c.classList.toggle('active', selectedPerks.includes(cKey));
+                        });
+                    }
+                }
+                applyPerks();
+            });
+            grid.appendChild(card);
+        });
+
+        panel.style.display = 'flex';
+        // Unlock pointer so user can click
+        if (controls && controls.isLocked && !isMobileActive) {
+            document.exitPointerLock();
+        }
+    } else {
+        panel.style.display = 'none';
+        // Re-lock pointer on close (desktop only)
+        if (!isMobileActive && !isGameOver) {
+            renderer.domElement.requestPointerLock();
+        }
+    }
+}
+
+// Expose to global for onclick
+window.togglePerkPanel = togglePerkPanel;
 
 // --- Perk Functions ---
 function applyPerks() {
