@@ -390,7 +390,7 @@ class Charger extends Enemy {
     constructor(scene, position) {
         super(scene, position);
         this.health = 50;
-        this.speed = 10;
+        this.speed = 5;
         this.scoreValue = 50;
         this.mesh.material.color.setHex(0xff0000);
         this.baseColor = 0xff0000;
